@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
-
+app.use(express.static(__dirname));
 app.use(cors());
 app.use(express.json());
 
@@ -53,4 +53,8 @@ app.get('/api/istatistik', (req, res) => {
 
 app.listen(3000, '0.0.0.0', () => {
     console.log("SUNUCU 3000 PORTUNDA AKTIF VE HAZIR!");
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
 });
