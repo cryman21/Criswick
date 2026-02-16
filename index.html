@@ -3,126 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ziyaretçi Takip Sistemi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Ziyaretçi Defteri</title>
     <style>
-        body { background-color: #f8f9fa; }
-        .ana-kart { max-width: 600px; margin: 30px auto; }
-        .cikis-yapildi { background-color: #e9ecef !important; opacity: 0.8; }
+        body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; padding: 50px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
+        input { padding: 10px; width: 200px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #218838; }
+        ul { list-style: none; padding: 0; margin-top: 20px; }
+        li { background: #eee; margin: 5px 0; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card ana-kart shadow p-4">
-        <h3 class="text-center text-primary mb-4 border-bottom pb-2">Ziyaretçi Takip Sistemi</h3>
-        
-        <div class="input-group mb-3">
-            <input type="text" id="isimKutusu" class="form-control" placeholder="İsim soyisim..." onkeypress="if(event.key === 'Enter') kaydet()">
-            <button class="btn btn-primary" onclick="kaydet()">Ekle</button>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <input type="text" id="aramaKutusu" class="form-control form-control-sm w-50" placeholder="Ara..." onkeyup="listeyiFiltrele()">
-            <span class="badge bg-dark">Toplam: <span id="toplamSayac">0</span></span>
-        </div>
-
-        <ul id="ziyaretciListesi" class="list-group"></ul>
-    </div>
+    <h2>Ziyaretçi Listesi</h2>
+    <input type="text" id="isimInput" placeholder="Adınızı yazın...">
+    <button onclick="ekle()">Ekle</button>
+    <ul id="liste"></ul>
 </div>
 
 <script>
-    let anaListe = [];
+    // Sayfa açıldığında listeyi otomatik yükle
+    window.onload = listele;
 
-    async function verileriCek() {
-        const cevap = await fetch('http://127.0.0.1:3000/api/kaydet');
-        const veri = await cevap.json();
-        anaListe = veri.toplamListe || [];
-        listeyiCiz(anaListe);
-        sayacGuncelle();
+    // 1. LİSTELEME FONKSİYONU
+    function listele() {
+        fetch('/api/ziyaretciler') // Başında http://... yok, sadece yol var.
+            .then(res => res.json())
+            .then(veriler => {
+                const liste = document.getElementById('liste');
+                liste.innerHTML = ''; // Listeyi temizle
+                veriler.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item.isim;
+                    liste.appendChild(li);
+                });
+            })
+            .catch(err => console.error("Liste yüklenemedi:", err));
     }
 
-    function listeyiCiz(liste) {
-        const listeAlani = document.getElementById('ziyaretciListesi');
-        listeAlani.innerHTML = "";
+    // 2. EKLEME FONKSİYONU
+    function ekle() {
+        const input = document.getElementById('isimInput');
+        const isim = input.value;
 
-        liste.forEach(item => {
-            const li = document.createElement('li');
-            // Eğer çıkış yapılmışsa farklı tasarım uygula
-            li.className = `list-group-item d-flex justify-content-between align-items-center mb-2 shadow-sm rounded ${item.cikis_saati ? 'cikis-yapildi' : ''}`;
-            
-            let sagTaraf = "";
-            if (item.cikis_saati) {
-                sagTaraf = `<small class="text-danger fw-bold">Çıkış: ${item.cikis_saati.split(' ')[1]}</small>`;
-            } else {
-                sagTaraf = `<button class="btn btn-warning btn-sm" onclick="cikisYap(${item.id})">Çıkış Yap</button>`;
-            }
+        if (!isim) {
+            alert("Lütfen bir isim yazın!");
+            return;
+        }
 
-            li.innerHTML = `
-                <div>
-                    <strong>${item.isim}</strong> <br>
-                    <small class="text-muted">Giriş: ${item.tarih.split(' ')[1]}</small>
-                </div>
-                <div>${sagTaraf}</div>
-            `;
-            listeAlani.appendChild(li);
-        });
+        fetch('/api/kaydet?isim=' + encodeURIComponent(isim)) // Başında http://... yok.
+            .then(res => res.json())
+            .then(sonuc => {
+                console.log("Kaydedildi:", sonuc);
+                input.value = ''; // Kutuyu boşalt
+                listele(); // Listeyi güncelle
+            })
+            .catch(err => {
+                console.error("Kaydedilemedi:", err);
+                alert("Bir hata oluştu. Konsolu (F12) kontrol et.");
+            });
     }
-
-    async function kaydet() {
-        const kutu = document.getElementById('isimKutusu');
-        if (kutu.value.trim() === "") return;
-        const cevap = await fetch(`http://127.0.0.1:3000/api/kaydet?isim=${encodeURIComponent(kutu.value)}`);
-        const veri = await cevap.json();
-        anaListe = veri.toplamListe;
-        listeyiCiz(anaListe);
-        sayacGuncelle();
-        kutu.value = "";
-    }
-
-    async function cikisYap(id) {
-        const cevap = await fetch(`http://127.0.0.1:3000/api/cikis-yap?id=${id}`);
-        const veri = await cevap.json();
-        anaListe = veri.toplamListe;
-        listeyiCiz(anaListe);
-    }
-
-    async function sayacGuncelle() {
-        const cevap = await fetch('http://127.0.0.1:3000/api/istatistik');
-        const veri = await cevap.json();
-        document.getElementById('toplamSayac').innerText = veri.toplam;
-    }
-
-    function listeyiFiltrele() {
-        const kelime = document.getElementById('aramaKutusu').value.toLowerCase();
-        const filtrelenmis = anaListe.filter(i => i.isim.toLowerCase().includes(kelime));
-        listeyiCiz(filtrelenmis);
-    }
-
-    window.onload = verileriCek;
-
-    function isimEkle() {
-    const isimInput = document.getElementById('isimInput'); // Input id'n neyse o
-    const isim = isimInput.value;
-
-    // BURASI KRİTİK: Başına http://localhost:3000 yazma!
-    // Sadece '/ekle' yazarsan, site kendi olduğu adrese gönderir.
-    fetch('/ekle', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isim: isim })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Başarılı:', data);
-        location.reload(); // Sayfayı yenile ki yeni isim listede görünsün
-    })
-    .catch(error => console.error('Hata:', error));
-}
 </script>
+
 </body>
 </html>
