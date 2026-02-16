@@ -102,6 +102,27 @@
     }
 
     window.onload = verileriCek;
+
+    function isimEkle() {
+    const isimInput = document.getElementById('isimInput'); // Input id'n neyse o
+    const isim = isimInput.value;
+
+    // BURASI KRİTİK: Başına http://localhost:3000 yazma!
+    // Sadece '/ekle' yazarsan, site kendi olduğu adrese gönderir.
+    fetch('/ekle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isim: isim })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Başarılı:', data);
+        location.reload(); // Sayfayı yenile ki yeni isim listede görünsün
+    })
+    .catch(error => console.error('Hata:', error));
+}
 </script>
 </body>
 </html>
