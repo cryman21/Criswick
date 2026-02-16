@@ -1,60 +1,45 @@
 const express = require('express');
-const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const path = require('path');
 const app = express();
-app.use(express.static(__dirname));
+const port = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
+// Veritabanı bağlantısı
 const db = new sqlite3.Database('./ziyaretci.db');
 
-// Tabloyu yeni sütunlarla (tarih ve cikis_saati) kuruyoruz
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS ziyaretciler (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        isim TEXT,
-        tarih DATETIME DEFAULT (datetime('now','localtime')),
-        cikis_saati DATETIME
-    )`);
+db.run("CREATE TABLE IF NOT EXISTS ziyaretciler (id INTEGER PRIMARY KEY AUTOINCREMENT, isim TEXT)");
+
+// ANA SAYFA
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// İSİM KAYDETME VE LİSTELEME
+// KAYDETME
 app.get('/api/kaydet', (req, res) => {
     const isim = req.query.isim;
     if (isim) {
-        db.run("INSERT INTO ziyaretciler (isim) VALUES (?)", [isim], function(err) {
-            db.all("SELECT * FROM ziyaretciler ORDER BY id DESC", [], (err, rows) => {
-                res.json({ toplamListe: rows });
-            });
+        db.run("INSERT INTO ziyaretciler (isim) VALUES (?)", [isim], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ status: "ok" });
         });
     } else {
-        db.all("SELECT * FROM ziyaretciler ORDER BY id DESC", [], (err, rows) => {
-            res.json({ toplamListe: rows });
-        });
+        res.status(400).json({ error: "İsim boş olamaz" });
     }
 });
 
-// ÇIKIŞ YAPMA (GÜNCELLEME)
-app.get('/api/cikis-yap', (req, res) => {
-    const id = req.query.id;
-    db.run("UPDATE ziyaretciler SET cikis_saati = datetime('now','localtime') WHERE id = ?", [id], function(err) {
-        db.all("SELECT * FROM ziyaretciler ORDER BY id DESC", [], (err, rows) => {
-            res.json({ toplamListe: rows });
-        });
+// LİSTELEME (Hata buradaydı, şimdi düzelttik)
+app.get('/api/ziyaretciler', (req, res) => {
+    db.all("SELECT isim FROM ziyaretciler", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows); // Sadece listeyi gönderiyoruz
     });
 });
 
-// İSTATİSTİK
-app.get('/api/istatistik', (req, res) => {
-    db.get("SELECT COUNT(*) as toplam FROM ziyaretciler", [], (err, row) => {
-        res.json({ toplam: row ? row.toplam : 0 });
-    });
-});
-
-app.listen(3000, '0.0.0.0', () => {
-    console.log("SUNUCU 3000 PORTUNDA AKTIF VE HAZIR!");
-});
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+app.listen(port, () => {
+    console.log(`Sunucu ${port} portunda çalışıyor`);
 });
