@@ -3,112 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dijital Ziyaretçi Defteri</title>
+    <title>Ziyaretçi Defteri v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg: #f8fafc;
-            --text: #1e293b;
-        }
-.delete-btn {
-    background: #ff4757;
-    padding: 5px 10px;
-    font-size: 12px;
-    margin-left: auto; /* Sağa yaslar */
-}
-.tarih {
-    font-size: 10px;
-    color: #94a3b8;
-    display: block;
-}
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg); 
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-
-        .card { 
-            background: white; 
-            padding: 2.5rem; 
-            border-radius: 1.5rem; 
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); 
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        h2 { margin-bottom: 1.5rem; font-weight: 600; color: #0f172a; }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 2rem;
-        }
-
-        input { 
-            flex: 1;
-            padding: 12px 16px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 0.75rem; 
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
+        :root { --primary: #6366f1; --primary-hover: #4f46e5; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { margin-bottom: 1.5rem; color: #0f172a; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 2rem; }
+        input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 0.75rem; outline: none; }
         input:focus { border-color: var(--primary); }
-
-        button { 
-            padding: 12px 20px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 0.75rem; 
-            font-weight: 600;
-            cursor: pointer; 
-            transition: background 0.2s;
-        }
-
-        button:hover { background: var(--primary-hover); }
-
-        #liste { 
-            list-style: none; 
-            padding: 0; 
-            margin: 0;
-            text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        li { 
-            background: #f1f5f9; 
-            margin-bottom: 8px; 
-            padding: 12px 16px; 
-            border-radius: 0.5rem; 
-            display: flex;
-            align-items: center;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        li::before {
-            content: "👤";
-            margin-right: 10px;
-            font-size: 1.1rem;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Scrollbar güzelleştirme */
-        #liste::-webkit-scrollbar { width: 6px; }
-        #liste::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; }
+        #liste { list-style: none; padding: 0; text-align: left; }
+        li { background: #f1f5f9; margin-bottom: 8px; padding: 12px; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .tarih { font-size: 10px; color: #94a3b8; display: block; }
+        .delete-btn { background: #ff4757; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+        .delete-btn:hover { background: #ff6b81; }
     </style>
 </head>
 <body>
@@ -116,13 +26,14 @@
 <div class="card">
     <h2>Ziyaretçi Defteri</h2>
     <div class="input-group">
-        <input type="text" id="isimInput" placeholder="Adınızı bırakın...">
+        <input type="text" id="isimInput" placeholder="Adınızı yazın...">
         <button onclick="ekle()">Ekle</button>
     </div>
     <ul id="liste"></ul>
 </div>
 
 <script>
+    // Sayfa açıldığında listeyi yükle
     window.onload = listele;
 
     function listele() {
@@ -131,18 +42,26 @@
             .then(veriler => {
                 const liste = document.getElementById('liste');
                 liste.innerHTML = '';
-                veriler.reverse().forEach(item => { // En son eklenen en üstte görünsün
+                // En son eklenen en üstte görünsün diye reverse yapıyoruz
+                veriler.reverse().forEach(item => {
                     const li = document.createElement('li');
-                    li.textContent = item.isim;
+                    li.innerHTML = `
+                        <div>
+                            <strong>${item.isim}</strong>
+                            <span class="tarih">${item.tarih || 'Yeni Kayıt'}</span>
+                        </div>
+                        <button class="delete-btn" onclick="sil(${item.id})">Sil</button>
+                    `;
                     liste.appendChild(li);
                 });
-            });
+            })
+            .catch(err => console.error("Liste yüklenemedi:", err));
     }
 
     function ekle() {
         const input = document.getElementById('isimInput');
         const isim = input.value.trim();
-        if (!isim) return alert("Boş bırakamazsın!");
+        if (!isim) return alert("Lütfen bir isim yazın!");
 
         fetch('/api/kaydet?isim=' + encodeURIComponent(isim))
             .then(res => res.json())
@@ -152,33 +71,19 @@
             });
     }
 
-    function listele() {
-    fetch('/api/ziyaretciler')
-        .then(res => res.json())
-        .then(veriler => {
-            const liste = document.getElementById('liste');
-            liste.innerHTML = '';
-            veriler.reverse().forEach(item => {
-                const li = document.createElement('li');
-                // İçeriğe hem ismi hem tarihi hem de silme butonunu ekliyoruz
-                li.innerHTML = `
-                    <div>
-                        <strong>${item.isim}</strong>
-                        <span class="tarih">${item.tarih || 'Yeni'}</span>
-                    </div>
-                    <button class="delete-btn" onclick="sil(${item.id})">Sil</button>
-                `;
-                liste.appendChild(li);
-            });
-        });
-}
-
-function sil(id) {
-    if(confirm("Bu kaydı silmek istediğine emin misin?")) {
-        fetch('/api/sil?id=' + id)
-            .then(() => listele()); // Silince listeyi yenile
+    function sil(id) {
+        if (!id) return alert("Hata: ID bulunamadı!");
+        
+        if (confirm("Bu ismi silmek istediğine emin misin?")) {
+            fetch('/api/sil?id=' + id)
+                .then(res => res.json())
+                .then(sonuc => {
+                    console.log("Silme sonucu:", sonuc);
+                    listele(); // Listeyi güncelle
+                })
+                .catch(err => alert("Silme işlemi başarısız!"));
+        }
     }
-}
 </script>
 
 </body>
