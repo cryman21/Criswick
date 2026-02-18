@@ -12,7 +12,17 @@
             --bg: #f8fafc;
             --text: #1e293b;
         }
-
+.delete-btn {
+    background: #ff4757;
+    padding: 5px 10px;
+    font-size: 12px;
+    margin-left: auto; /* Sağa yaslar */
+}
+.tarih {
+    font-size: 10px;
+    color: #94a3b8;
+    display: block;
+}
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg); 
@@ -141,6 +151,34 @@
                 listele();
             });
     }
+
+    function listele() {
+    fetch('/api/ziyaretciler')
+        .then(res => res.json())
+        .then(veriler => {
+            const liste = document.getElementById('liste');
+            liste.innerHTML = '';
+            veriler.reverse().forEach(item => {
+                const li = document.createElement('li');
+                // İçeriğe hem ismi hem tarihi hem de silme butonunu ekliyoruz
+                li.innerHTML = `
+                    <div>
+                        <strong>${item.isim}</strong>
+                        <span class="tarih">${item.tarih || 'Yeni'}</span>
+                    </div>
+                    <button class="delete-btn" onclick="sil(${item.id})">Sil</button>
+                `;
+                liste.appendChild(li);
+            });
+        });
+}
+
+function sil(id) {
+    if(confirm("Bu kaydı silmek istediğine emin misin?")) {
+        fetch('/api/sil?id=' + id)
+            .then(() => listele()); // Silince listeyi yenile
+    }
+}
 </script>
 
 </body>

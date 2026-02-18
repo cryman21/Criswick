@@ -43,3 +43,24 @@ app.get('/api/ziyaretciler', (req, res) => {
 app.listen(port, () => {
     console.log(`Sunucu ${port} portunda çalışıyor`);
 });
+
+// 1. Kaydetme kısmına tarih ekleyelim (server.js içinde bul ve değiştir)
+app.get('/api/kaydet', (req, res) => {
+    const isim = req.query.isim;
+    const tarih = new Date().toLocaleString('tr-TR'); // Tarih bilgisini oluşturur
+    if (isim) {
+        db.run("INSERT INTO ziyaretciler (isim, tarih) VALUES (?, ?)", [isim, tarih], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ status: "ok" });
+        });
+    }
+});
+
+// 2. Silme kapısını ekleyelim (server.js'in sonuna, listen'dan önce ekle)
+app.get('/api/sil', (req, res) => {
+    const id = req.query.id;
+    db.run("DELETE FROM ziyaretciler WHERE id = ?", [id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ status: "silindi" });
+    });
+});
